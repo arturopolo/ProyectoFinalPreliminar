@@ -70,41 +70,24 @@ var margin = {top: 20, right: 300, bottom: 100, left: 50},
     margin2 = { top: 430, right: 10, bottom: 20, left: 40 },
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom,
-    height2 = 500 - margin2.top - margin2.bottom;
+    height2 = 500 - margin2.top - margin2.bottom,
+    parseDate = d3.time.format("%Y%m%d").parse,
+    bisectDate = d3.bisector(function(d) { return d.anyo; }).left,
+    xScale = d3.time.scale().range([0, width]),
+    xScale2 = d3.time.scale().range([0, width]), // Scale for brush
+    yScale = d3.scale.linear().range([height, 0]);
 
-var parseDate = d3.time.format("%Y%m%d").parse;
-var bisectDate = d3.bisector(function(d) { 
-                                //console.log("bisectDate -- " + d.anyo);
-                                //console.log("funcion bisectDate -- " + d.anyo);
-                                return d.anyo; 
-                            }).left;
-
-var xScale = d3.time.scale().range([0, width])
-   ,xScale2 = d3.time.scale().range([0, width]); // Duplicate xScale for brushing ref later
-
-var yScale = d3.scale.linear()
-    .range([height, 0]);
-
-// 40 Custom DDV colors 
 var color = d3.scale.ordinal().range(["#48A36D",  "#56AE7C",  "#64B98C", "#72C39B", "#80CEAA", "#80CCB3", "#7FC9BD", "#7FC7C6", "#7EC4CF", "#7FBBCF", "#7FB1CF", "#80A8CE", "#809ECE", "#8897CE", "#8F90CD", "#9788CD", "#9E81CC", "#AA81C5", "#B681BE", "#C280B7", "#CE80B0", "#D3779F", "#D76D8F", "#DC647E", "#E05A6D", "#E16167", "#E26962", "#E2705C", "#E37756", "#E38457", "#E39158", "#E29D58", "#E2AA59", "#E0B15B", "#DFB95C", "#DDC05E", "#DBC75F", "#E3CF6D", "#EAD67C", "#F2DE8A"]);
 
-var xAxis = d3.svg.axis()
-    .scale(xScale)
-    .orient("bottom"),
-
-    xAxis2 = d3.svg.axis() // xAxis for brush slider
-    .scale(xScale2)
-    .orient("bottom");    
-
-var yAxis = d3.svg.axis()
-    .scale(yScale)
-    .orient("left");  
+var xAxis = d3.svg.axis().scale(xScale).orient("bottom"),
+    xAxis2 = d3.svg.axis().scale(xScale2).orient("bottom"),
+    yAxis = d3.svg.axis().scale(yScale).orient("left");  
 
 var line = d3.svg.line()
-    .interpolate("basis")
-    .x(function(d) { return xScale(d.anyo); })
-    .y(function(d) { return yScale(d.rating); })
-    .defined(function(d) { return d.rating; });  // Hiding line value defaults of 0 for missing data
+                 .interpolate("basis")
+                 .x(function(d) { return xScale(d.anyo); })
+                 .y(function(d) { return yScale(d.rating); })
+                 .defined(function(d) { return d.rating; });  // Hiding line value defaults of 0 for missing data
 
 var maxY; // Defined later to update yAxis
 
@@ -124,6 +107,15 @@ svg.append("rect")
     .attr("id", "mouse-tracker")
     .style("fill", "white"); 
 
+
+// Create invisible rect for year legend
+var yearLegend = svg.append("text")
+                    .attr("width", 50)
+                    .attr("height", 10)                                    
+                    .attr("x", width/2) 
+                    .attr("y", 40);
+                    //.style("fill", "white"); 
+
 //for slider part-----------------------------------------------------------------------------------
   
 var context = svg.append("g") // Brushing context box container
@@ -139,6 +131,8 @@ svg.append("defs")
    .attr("height", height); 
 
 //end slider part----------------------------------------------------------------------------------- 
+
+function graficar() {
 
 d3.tsv("data.tsv", function(error, data) { 
   color.domain(d3.keys(data[0]).filter(function(key) { // Set the domain of the color ordinal scale to be all the csv headers except "date", matching a color to an issue
@@ -221,21 +215,22 @@ d3.tsv("data.tsv", function(error, data) {
       .text("Número de becas asignadas");
 
   var issue = svg.selectAll(".issue")
-      .data(categories) // Select nested data and append to new svg group elements
-    .enter().append("g")
-      .attr("class", "issue");   
+                 .data(categories) // Select nested data and append to new svg group elements
+                 .enter().append("g")
+                 .attr("class", "issue");   
 
   issue.append("path")
-      .attr("class", "line")
-      .style("pointer-events", "none") // Stop line interferring with cursor
-      .attr("id", function(d) {
+       .attr("class", "line")
+       .style("pointer-events", "none") // Stop line interferring with cursor
+       .attr("id", function(d) {
         return "line-" + d.name.replace(" ", "").replace("/", ""); // Give line id of line-(insert issue name, with any spaces replaced with no spaces)
-      })
-      .attr("d", function(d) { 
-        return d.visible ? line(d.values) : null; // If array key "visible" = true then draw line, if not then don't 
-      })
-      .attr("clip-path", "url(#clip)")//use clip path to make irrelevant part invisible
-      .style("stroke", function(d) { return color(d.name); });
+       })
+       .attr("d", function(d) { 
+         return d.visible ? line(d.values) : null; // If array key "visible" = true then draw line, if not then don't 
+       })
+       .attr("clip-path", "url(#clip)")//use clip path to make irrelevant part invisible
+       .style("stroke", function(d) { return color(d.name); });
+
 
   // draw legend
   var legendSpace = 450 / categories.length; // 450/number of issues (ex. 40)    
@@ -341,6 +336,8 @@ d3.tsv("data.tsv", function(error, data) {
                       hoverDate.text(null) // on mouseout remove text for hover date
                       d3.select("#hover-line")
                         .style("opacity", 1e-6); // On mouse out making line invisible
+
+                     yearLegend.text("");
        });
 
   function mousemove() { 
@@ -380,14 +377,19 @@ d3.tsv("data.tsv", function(error, data) {
       console.log("graph_x -- " + format(graph_x));
       console.log("bisectDate(data, x0, 1) -- " + bisectDate(data, x0, 1));
       console.log("i -- " + i);
-      console.log("d0.date -- " + d0.date);
-      console.log("d1.date -- " + d1.date);
-      console.log("d -- " + d.date);*/
+      console.log(d0.date);
+      console.log(d1.date);*/
+      /*console.log(format(d.date));*/
+
+      var format2 = d3.time.format('%Y');
+      console.log(format2(graph_x));
+      yearLegend.attr("class", "hover-text")
+                .text(format2(graph_x));
+  
 
       focus.select("text").text(function(columnName){
          //because you didn't explictly set any data on the <text>
          //elements, each one inherits the data from the focus <g>
-        //console.log("d[columnName] -- " + d[columnName]);
          return (d[columnName]);
       });
   }; 
@@ -427,6 +429,8 @@ d3.tsv("data.tsv", function(error, data) {
     });
     return d3.max(maxYValues);
   }
+}
 
+graficar();
 </script>
 </html>
