@@ -25,8 +25,8 @@
 </head>
 <body>
   <script src="https://d3js.org/d3.v3.js"></script>
-  <script src = "https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.js"></script>
-  <!--script src="lib/nv.d3.js"></script-->
+  <!--script src = "https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.js"></script-->
+  <script src="lib/nv.d3.js"></script>
   <table align="center">
     <tr>
       <td width="70%"><div id="chart"><svg width="900" height="600"></svg></div></td>
@@ -209,7 +209,7 @@
               variacion.select("text").text(function(d, i) { return ""; });
             });
 
-        d3.select('.nv-legendWrap').attr('transform', 'translate(140, -60)')
+        // d3.select('.nv-legendWrap').attr('transform', 'translate(140, -60)')
 
           nv.utils.windowResize(chart.update);
           return chart;
