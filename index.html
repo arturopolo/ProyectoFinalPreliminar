@@ -9,6 +9,20 @@
       font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
       font-size: 11px;
     }
+    p {
+      font-size: 13px;
+      text-align: justify;
+    }
+    .rotulos {
+      font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: rgb(128,128,128);
+    }    
+    .tabla {
+      font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      color: rgb(128,128,128);
+    }    
     .nv-x text{
      font-size: 11px;     
     }
@@ -16,11 +30,6 @@
       font-size: 11px;
 
     }
-    .actual {
-      font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      font-size: 12 px;
-      color: rgb(128,128,128);
-    }    
   </style>
 </head>
 <body>
@@ -29,41 +38,47 @@
   <script src="lib/nv.d3.js"></script>
   <table align="center">
     <tr>
-      <td width="70%"><div id="chart"><svg width="900" height="600"></svg></div></td>
+      <td colspan="2">
+        <p>
+          Por medio de esta visualización se pretende presentar la evolución de las becas otorgadas por la fundaci&oacute;n FULBRIGHT en Colombia desde 1958 por materia de estudio. A medida que el usuario desplaza el mouse sobre las &aacute;reas apiladas, se registra el número de becas asignadas por convenio con una variaci&oacute;n versus el mismo desempe&ntilde;o en el per&iacute;odo inmediatamente anterior en la tabla ubicada a la derecha.
+
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td width="60%"><div id="chart"><svg width="900" height="600"></svg></div></td>
       <td width="30%""><div id="insights"></div>
       </td>
     </tr>
   </table>
+  <div id="chart"><svg width="900" height="600"></svg>
   <script>
 
     var margin = {top: 0, right: 0, bottom: 0, left: 0},
         width = 300 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        height = 600 - margin.top - margin.bottom;
 
     var svg = d3.select("#insights")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height)
                 .append("g")
-                // .style('stroke', 'black')
-                // .style('stroke-width', '1.8')
                 .attr("transform", "translate(20,0)");
 
-    // Create invisible rect for mouse tracking
     svg.append("rect")
         .attr("width", width)
         .attr("height", height)                                    
         .attr("x", 0) 
         .attr("y", 0)
         .attr("id", "mouse-tracker")
-        // .style("fill", "#FBFCFC");                 
+        //.style("fill", "#FBFCFC");
         .style("fill", "white");                 
 
 
     d3.csv('data/dataStacked2.csv', function(data2) {
 
       var becasPorAnyoPorConvenio = d3.nest()
-                                      .key(function(d){ return d["CONV."]; })
+                                      .key(function(d){ return d["COHORTE"]; })
                                       .key(function(d){ return d["ABBREV."]; })
                                       .rollup(function(v) { return v.length; })
                                       .entries(data2)
@@ -118,7 +133,6 @@
           .map(function(k){
             return {"key":k,"values":data.map(function(d){
              return {
-               //"x":d3.time.format("%Y%m%d").parse(d.ANYO+"0101"),
                "x":d.ANYO,
                "y":+d[k]
              }
@@ -134,29 +148,21 @@
                                .margin({left: 60})
                                .margin({right: 15})
                                .margin({bottom: 40})
-                                // .height(500)
-                                // .width(9009)
                                .x(function(d) { return d.x })
                                .y(function(d) { return d.y })
                                .useInteractiveGuideline(true)
                                .rightAlignYAxis(false)
-                               //.transitionDuration(500)
                                .showControls(false)       //Allow user to choose 'Stacked', 'Stream', 'Expanded' mode.
                                .clipEdge(true);
 
-          chart.xAxis.tickFormat(function(d) { return d; })
-                     .axisLabel("Año")
-                     // .rotateLabels(-45);
-
-          chart.yAxis.tickFormat(d3.format(',.0f'))
-                     .axisLabel("Número de becas asignadas");
-
+          chart.xAxis.tickFormat(function(d) { return d; }).axisLabel("Año de asignación de la beca")
+          chart.yAxis.tickFormat(d3.format(',.0f')).axisLabel("Número de becas asignadas");
           chart.legend.rightAlign(true);
-
-        //chart.xScale(d3.time.scale());
-        //chart.xRange([0, 900 - chart.margin().left - chart.margin().right]);
-          chart.xDomain([1958, 2014]);
-        //chart.xDomain([new Date().setFullYear('1957'), new Date().setFullYear('2014')]);
+          chart.xDomain([d3.min(becasPorAnyo, function(d){return d.anyo}), d3.max(becasPorAnyo, function(d){return d.anyo})]);
+          //chart.interactiveLayer.tooltip.fixedTop(100);
+          chart.useInteractiveGuideline(true);
+          // chart.interactiveLayer.tooltip.gravity('s')
+          chart.interactiveLayer.tooltip.chartContainer(d3.select('td #chart svg'));
 
           d3.select('#chart svg')
             .datum(dataToPlot)
@@ -166,9 +172,8 @@
               var mouseCoords = d3.mouse(this);
               var x = chart.stacked.xScale().invert(mouseCoords[0]-chart.margin().left);
               var pointIndex = Math.trunc(x);
-              // console.log(pointIndex);
 
-              if (pointIndex >= 1958 && pointIndex <= 2014) {
+              if (pointIndex >= 1958 && pointIndex <= 2015) {
                 var vals = dataToPlot.map(function(d) {
                     var obj= {};
                     obj.key = d.key;
@@ -179,31 +184,38 @@
                 });
 
                 var becasPorAnyoPorConvenioMergeFiltrado = filtrarDataConvenios(pointIndex);
-                // console.log("becasPorAnyoPorConvenioMergeFiltrado");
-                // console.log(becasPorAnyoPorConvenioMergeFiltrado);
+
+                legend.select("text")
+                      .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
+
                 actual.select("text")
                      .text(function(columnName){ 
                       var beca = becasPorAnyoPorConvenioMergeFiltrado.filter(function (d) { return d.key == columnName.key });
                       return beca[0].total; 
-                    });
+                    })
+                     .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
 
                 anterior.select("text")
                      .text(function(columnName){ 
                       var beca = becasPorAnyoPorConvenioMergeFiltrado.filter(function (d) { return d.key == columnName.key });
                       return beca[0].totalAnterior; 
-                    });
+                    })
+                    .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
 
                 variacion.select("text")
                          .text(function(columnName){ 
                           var beca = becasPorAnyoPorConvenioMergeFiltrado.filter(function (d) { return d.key == columnName.key });
                           return d3.format(".0%")(beca[0].var); 
-                        });
+                         })
+                         .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
+
               }
 
 
 
             })
             .on("mouseout.mine", function(dataset) {
+              legend.select("text").style("fill", "black");
               actual.select("text").text(function(d, i) { return ""; });
               anterior.select("text").text(function(d, i) { return ""; });
               variacion.select("text").text(function(d, i) { return ""; });
@@ -216,12 +228,15 @@
         });
 
 
-        svg.append ("text").attr("x", 10).attr("y", 15).text("Convenio");
-        svg.append ("text").attr("x", 90).attr("y", 15).text("Actual");
-        svg.append ("text").attr("x", 150).attr("y", 15).text("Anterior");
-        svg.append ("text").attr("x", 220).attr("y", 15).text("%YoY");
+        svg.append ("text").attr("x", 40).attr("y", 20).text("Estadísticas por Convenio").attr("class", "rotulos");
+        svg.append ("text").attr("x", 10).attr("y", 60).text("Convenio").attr("class", "rotulos");
+        svg.append ("text").attr("x", 90).attr("y", 60).text("Actual").attr("class", "rotulos");
+        svg.append ("text").attr("x", 150).attr("y", 60).text("Anterior").attr("class", "rotulos");
+        svg.append ("text").attr("x", 220).attr("y", 60).text("%YoY").attr("class", "rotulos");
 
 
+        var legendSpace = 85;
+        var legendInter = 10;
         var legend = svg.selectAll(".legend")
                         .data(becasPorConvenio)
                         .enter()
@@ -230,39 +245,42 @@
 
         legend.append("text")
               .attr("x", 10) 
-              .attr("y", function (d, i) { return i * 10  + 30; })
+              .attr("y", function (d, i) { return i * legendInter  + legendSpace; })
               .text(function(d) { return d.key; }); 
+
+
+
 
         var actual = svg.selectAll(".actual")
                        .data(becasPorConvenio)
                        .enter()
                        .append("g")
-                       .attr("class", "actual");
+                       .attr("class", "tabla");
 
         actual.append("text")
               .attr("x", 90) 
-              .attr("y", function (d, i) { return i * 10 + 30; });
+              .attr("y", function (d, i) { return i * legendInter + legendSpace; });
 
         var anterior = svg.selectAll(".anterior")
                        .data(becasPorConvenio)
                        .enter()
                        .append("g")
-                       .attr("class", "actual");
+                       .attr("class", "tabla");
 
         anterior.append("text")
               .attr("x", 150) 
-              .attr("y", function (d, i) { return i * 10 + 30; });
+              .attr("y", function (d, i) { return i * legendInter + legendSpace; });
 
 
         var variacion = svg.selectAll(".variacion")
                            .data(becasPorConvenio)
                            .enter()
                            .append("g")
-                           .attr("class", "actual");
+                           .attr("class", "tabla");
 
         variacion.append("text")
                   .attr("x", 220) 
-                  .attr("y", function (d, i) { return i * 10 + 30; });
+                  .attr("y", function (d, i) { return i * legendInter + legendSpace; });
 
       });
 
@@ -290,14 +308,12 @@
 
 
 
-  
+      /**
+      Función que permite obtener las becas por convenios de una año en particular...
+      */  
       function filtrarDataConvenios(anyo) {
         var becasPorAnyoPorConvenioMergeFiltered = becasPorAnyoPorConvenioMerge.filter(function (d) { return d.anyo == anyo });
         var becasPorAnyoPorConvenioMergeFilteredAnterior = becasPorAnyoPorConvenioMerge.filter(function (d) { return d.anyo == anyo - 1});
-        // console.log("becasPorAnyoPorConvenioMergeFiltered");
-        // console.log(becasPorAnyoPorConvenioMergeFiltered);
-        // console.log("becasPorAnyoPorConvenioMergeFilteredAnterior");
-        // console.log(becasPorAnyoPorConvenioMergeFilteredAnterior);
 
         output = [];
         for (var i = 0; i < becasPorConvenio.length; i++) {
@@ -311,10 +327,19 @@
                       ,"var": (becasAnteriores==0)?0:(becasActuales/becasAnteriores-1)
                       });
         }
-        // console.log("output");
-        // console.log(output.sort(d3.descending(function(d){d.key})));
         return output;
       }
+
+
+      function determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado) {
+        var beca = becasPorAnyoPorConvenioMergeFiltrado.filter(function (d) { return d.key == columnName.key });
+        if (beca[0].var < 0) { 
+          return "#E74C3C"; 
+        } else if (beca[0].var > 0) { 
+          return "#2ECC71" 
+        } return "black"; 
+      }
+
 
     });
 
