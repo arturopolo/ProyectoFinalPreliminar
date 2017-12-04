@@ -47,18 +47,20 @@
     </tr>
     <tr>
       <td width="60%"><div id="chart"><svg width="900" height="600"></svg></div></td>
-      <td width="30%""><div id="insights"></div>
+      <td width="30%""><div id="details"></div>
       </td>
     </tr>
+    <tr>
+      <td colspan="2"><div id="insights"></td>
+    </tr>
   </table>
-  <div id="chart"><svg width="900" height="600"></svg>
   <script>
 
     var margin = {top: 0, right: 0, bottom: 0, left: 0},
         width = 300 - margin.left - margin.right,
         height = 600 - margin.top - margin.bottom;
 
-    var svg = d3.select("#insights")
+    var svg = d3.select("#details")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height)
@@ -73,6 +75,20 @@
         .attr("id", "mouse-tracker")
         //.style("fill", "#FBFCFC");
         .style("fill", "white");                 
+
+    var svg2 = d3.select("#insights")
+                .append("svg")
+                .attr("width", 800)
+                .attr("height", 200)
+                .append("g")
+                .attr("transform", "translate(0,0)");
+
+    svg2.append("rect")
+        .attr("width", 800)
+        .attr("height", 200)                                    
+        .attr("x", 0) 
+        .attr("y", 0)
+        .style("fill", "white");                              
 
 
     d3.csv('data/dataStacked2.csv', function(data2) {
@@ -95,7 +111,7 @@
 // console.log(becasPorAnyoPorConvenio);
 
       var becasPorAnyo = d3.nest()
-                           .key(function(d){ return d["CONV."]; })
+                           .key(function(d){ return d["COHORTE"]; })
                            .rollup(function(v) { return v.length; })
                            .entries(data2)
                            .map(function(group) {
@@ -139,8 +155,8 @@
             })}
           })
 
-        // console.log("dataToPlot");
-        // console.log(dataToPlot);
+        console.log("dataToPlot");
+        console.log(dataToPlot);
 
 
         nv.addGraph(function() {
@@ -208,6 +224,26 @@
                           return d3.format(".0%")(beca[0].var); 
                          })
                          .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
+
+                 insight.html(function(a) {
+                 	if (pointIndex <= 1978) {
+                 		return "Por defecto";
+                 	}
+                 	if (pointIndex >= 1979 && pointIndex <= 1989) { 
+                 		return "Década de Ciencias Sociales. Se asignan 25 becas promedio anuales a esta área de estudio."
+
+// SUNY Stony Brook    12
+
+
+
+                 	} 
+                 	if (pointIndex >= 1990 && pointIndex <= 1996) {
+                 		return "Reducción en un 73% de las becas asignadas. Solo 4 becas anuales asignadas. a esta área de estudio";	
+                 	}
+                 	if (pointIndex >= 1997) {
+                 		return "Foco en Educación registrando asignaciones de becas de hasta 49 en un año<br/>Arte, Aquitectura o Biología también presentan incrementos importantes.";
+                 	}
+                 });
 
               }
 
@@ -281,6 +317,12 @@
         variacion.append("text")
                   .attr("x", 220) 
                   .attr("y", function (d, i) { return i * legendInter + legendSpace; });
+
+        
+		var insight = svg2.append ("text")
+						  .attr("x", 20)
+						  .attr("y", 20)
+						  .attr("class", "rotulos");
 
       });
 
