@@ -76,21 +76,6 @@
         //.style("fill", "#FBFCFC");
         .style("fill", "white");                 
 
-    var svg2 = d3.select("#insights")
-                .append("svg")
-                .attr("width", 800)
-                .attr("height", 200)
-                .append("g")
-                .attr("transform", "translate(0,0)");
-
-    svg2.append("rect")
-        .attr("width", 800)
-        .attr("height", 200)                                    
-        .attr("x", 0) 
-        .attr("y", 0)
-        .style("fill", "white");                              
-
-
     d3.csv('data/dataStacked2.csv', function(data2) {
 
       var becasPorAnyoPorConvenio = d3.nest()
@@ -225,26 +210,6 @@
                          })
                          .style("fill", function(columnName) {return determinarColorFuente(columnName,becasPorAnyoPorConvenioMergeFiltrado)});
 
-                 insight.html(function(a) {
-                 	if (pointIndex <= 1978) {
-                 		return "Por defecto";
-                 	}
-                 	if (pointIndex >= 1979 && pointIndex <= 1989) { 
-                 		return "Década de Ciencias Sociales. Se asignan 25 becas promedio anuales a esta área de estudio."
-
-// SUNY Stony Brook    12
-
-
-
-                 	} 
-                 	if (pointIndex >= 1990 && pointIndex <= 1996) {
-                 		return "Reducción en un 73% de las becas asignadas. Solo 4 becas anuales asignadas. a esta área de estudio";	
-                 	}
-                 	if (pointIndex >= 1997) {
-                 		return "Foco en Educación registrando asignaciones de becas de hasta 49 en un año<br/>Arte, Aquitectura o Biología también presentan incrementos importantes.";
-                 	}
-                 });
-
               }
 
 
@@ -319,11 +284,6 @@
                   .attr("y", function (d, i) { return i * legendInter + legendSpace; });
 
         
-		var insight = svg2.append ("text")
-						  .attr("x", 20)
-						  .attr("y", 20)
-						  .attr("class", "rotulos");
-
       });
 
 
